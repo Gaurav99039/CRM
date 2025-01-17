@@ -8,7 +8,6 @@ def home(request):
     orders = Order.objects.all()
     total_orders = orders.count()
     delivered = orders.filter(status='Delivered').count()
-    delivered = orders.filter(status='pending')
     pending = orders.filter(status='pending').count()
     context = {'customers':customers,'orders':orders,'total_orders':total_orders
                 ,'delivered': delivered,'pending':pending}
@@ -18,5 +17,9 @@ def products(request):
     products = Product.objects.all()
     return render(request,'accounts/products.html',{'products':products})
 
-def customer(request):
-    return render(request,'accounts/customer.html')
+def customer(request,pk_test):
+    customer = Customer.objects.get(id=pk_test)
+    orders = customer.order_set.all()
+    order_count = orders.count()
+    context = {'customer':customer,'orders':orders,'order_count':order_count}
+    return render(request,'accounts/customer.html',context)
