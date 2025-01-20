@@ -25,8 +25,9 @@ def customer(request,pk_test):
     context = {'customer':customer,'orders':orders,'order_count':order_count}
     return render(request,'accounts/customer.html',context)
 
-def create_order(request):
-    form = OrderForm
+def create_order(request,pk):
+    customer = Customer.objects.get(id=pk)
+    form = OrderForm(initial={'customer':customer})
     if request.method == 'POST':
         form = OrderForm(request.POST)
         if form.is_valid():
