@@ -2,6 +2,8 @@ from django.shortcuts import render,redirect
 from django.http import HttpResponse
 from .models import *
 from .forms import OrderForm
+from django.forms import inlineformset_factory
+from .filters import OrderFilter
 # Create your views here.
 
 def home(request):
@@ -21,20 +23,23 @@ def products(request):
 def customer(request,pk_test):
     customer = Customer.objects.get(id=pk_test)
     orders = customer.order_set.all()
+    myfilter = OrderFilter(request.GET,queryset=orders)
+    orders = myfilter.qs
     order_count = orders.count()
-    context = {'customer':customer,'orders':orders,'order_count':order_count}
+    context = {'customer':customer,'orders':orders,'order_count':order_count,'myfilter':myfilter}
     return render(request,'accounts/customer.html',context)
 
 def create_order(request,pk):
+    OrderFormSet = inlineformset_factory(Customer,Order,fields=('product','status'),extra=10)
     customer = Customer.objects.get(id=pk)
-    form = OrderForm(initial={'customer':customer})
+    formset = OrderFormSet(queryset=Order.objects.none(),instance=customer)
     if request.method == 'POST':
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            form.save()
+        #form = OrderForm(request.POST)
+        formset = OrderFormSet(request.POST,instance=customer)
+        if formset.is_valid():
+            formset.save()
             return redirect('/')
-
-    context = {'form':form}
+    context = {'formset':formset}
     return render(request,'accounts/create_order.html',context)
 
 def update_order(request,pk):
