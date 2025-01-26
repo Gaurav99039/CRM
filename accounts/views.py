@@ -54,6 +54,10 @@ def home(request):
                 ,'delivered': delivered,'pending':pending}
     return render(request,'accounts/dashboard.html',context)
 
+def userpage(request):
+    context = {}
+    return render(request,'accounts/user.html')
+
 @login_required(login_url='login')
 def products(request):
     products = Product.objects.all()
