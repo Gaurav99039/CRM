@@ -7,12 +7,11 @@ from .filters import OrderFilter
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
+from .decorators import unautheicated_user
 # Create your views here.
 
+@unautheicated_user
 def register(request):
-    if request.user.is_authenticated:
-        return redirect('home')
-    else:
         form = CreateUserFrom()
         if request.method == 'POST':
             form = CreateUserFrom(request.POST)
@@ -23,10 +22,8 @@ def register(request):
         context = {'form':form}
         return render(request,'accounts/register.html',context)
 
+@unautheicated_user
 def login_user(request):
-    if request.user.is_authenticated:
-        return redirect('home')
-    else:
         context = {}
         if request.method == 'POST':
             username = request.POST.get('username')
