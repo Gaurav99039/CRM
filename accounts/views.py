@@ -7,22 +7,30 @@ from .filters import OrderFilter
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
-from .decorators import unautheicated_user
+from django.contrib.auth.models import Group
+from .decorators import unautheicated_user,allowed_users,admin_only
+from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
 
+@csrf_exempt
 @unautheicated_user
 def register(request):
         form = CreateUserFrom()
         if request.method == 'POST':
             form = CreateUserFrom(request.POST)
             if form.is_valid():
-                form.save()
-                messages.success(request,'You have sucessfully registered')
+                user = form.save()
+                username = form.cleaned_data.get('username')
+
+                group = Group.objects.get(name='customer')
+                user.groups.add(group)
+                messages.success(request,'You have sucessfully registered' + username)
                 return redirect('login')
         context = {'form':form}
         return render(request,'accounts/register.html',context)
 
 @unautheicated_user
+@csrf_exempt
 def login_user(request):
         context = {}
         if request.method == 'POST':
@@ -41,6 +49,7 @@ def logout_user(request):
     return redirect('login')
 
 @login_required(login_url='login')
+@admin_only
 def home(request):
     customers = Customer.objects.all()
     orders = Order.objects.all()
@@ -56,11 +65,13 @@ def userpage(request):
     return render(request,'accounts/user.html')
 
 @login_required(login_url='login')
+@allowed_users(['admin'])
 def products(request):
     products = Product.objects.all()
     return render(request,'accounts/products.html',{'products':products})
 
 @login_required(login_url='login')
+@allowed_users(['admin'])
 def customer(request,pk_test):
     customer = Customer.objects.get(id=pk_test)
     orders = customer.order_set.all()
@@ -71,6 +82,7 @@ def customer(request,pk_test):
     return render(request,'accounts/customer.html',context)
 
 @login_required(login_url='login')
+@allowed_users(['admin'])
 def create_order(request,pk):
     OrderFormSet = inlineformset_factory(Customer,Order,fields=('product','status'),extra=10)
     customer = Customer.objects.get(id=pk)
@@ -85,6 +97,7 @@ def create_order(request,pk):
     return render(request,'accounts/create_order.html',context)
 
 @login_required(login_url='login')
+@allowed_users(['admin'])
 def update_order(request,pk):
     order = Order.objects.get(id=pk)
     form = OrderForm(instance=order)
@@ -97,6 +110,7 @@ def update_order(request,pk):
     return render(request,'accounts/create_order.html',context)
 
 @login_required(login_url='login')
+@allowed_users(['admin'])
 def delete_order(request,pk):
     order = Order.objects.get(id=pk)
     if request.method == 'POST':
